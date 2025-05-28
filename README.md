@@ -1,2 +1,2 @@
-# Natrolite
-## A node based glsl shader editor
+# Chromite
+## A low level ciruit simulator
