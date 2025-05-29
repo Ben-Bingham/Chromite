@@ -387,6 +387,47 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     }
 
     if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE) {
+        if (!dragging) return;
+
+        glm::ivec2 mousePosition = windowMousePosition - viewportOffset;
+
+        glm::mat4 view = cam.ViewMatrix();
+        float aspect = (float)imGuiWindowSize.x / (float)imGuiWindowSize.y;
+        glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.01f, 100.0f);
+
+        glm::vec4 viewport{ 0.0f, 0.0f, imGuiWindowSize.x, imGuiWindowSize.y };
+
+        glm::vec3 mousePositionWorldspace = glm::unProject(glm::vec3{ (float)mousePosition.x, (float)mousePosition.y, 1.0f }, view, projection, viewport);
+
+        glm::ivec2 newPos = glm::floor(mousePositionWorldspace / grid.gridLength);
+
+        if (draggedComponent->north != nullptr) draggedComponent->north->south = nullptr;
+        if (draggedComponent->east != nullptr) draggedComponent->east->west = nullptr;
+        if (draggedComponent->south != nullptr) draggedComponent->south->north = nullptr;
+        if (draggedComponent->west != nullptr) draggedComponent->west->east = nullptr;
+
+        draggedComponent->position = newPos;
+
+        glm::ivec2 newNorthPos = newPos + glm::ivec2{ 0, 1 };
+        glm::ivec2 newEastPos = newPos + glm::ivec2{ 1, 0 };
+        glm::ivec2 newSouthPos = newPos + glm::ivec2{ 0, -1 };
+        glm::ivec2 newWestPos = newPos + glm::ivec2{ -1, 0 };
+
+        draggedComponent->north = nullptr;
+        draggedComponent->east = nullptr;
+        draggedComponent->south = nullptr;
+        draggedComponent->west = nullptr;
+
+        auto newNorthIt = std::find_if(components.begin(), components.end(), [&newNorthPos](Chromite::Component* component) { return component->position == newNorthPos; });
+        auto newEastIt = std::find_if(components.begin(), components.end(), [&newEastPos](Chromite::Component* component) { return component->position == newEastPos; });
+        auto newSouthIt = std::find_if(components.begin(), components.end(), [&newSouthPos](Chromite::Component* component) { return component->position == newSouthPos; });
+        auto newWestIt = std::find_if(components.begin(), components.end(), [&newWestPos](Chromite::Component* component) { return component->position == newWestPos; });
+
+        if (newNorthIt != components.end()) draggedComponent->north = *newNorthIt;
+        if (newEastIt != components.end()) draggedComponent->east = *newEastIt;
+        if (newSouthIt != components.end()) draggedComponent->south = *newSouthIt;
+        if (newWestIt != components.end()) draggedComponent->west = *newWestIt;
+
         dragging = false;
         draggedComponent = nullptr;
 
