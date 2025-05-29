@@ -9,6 +9,8 @@
 #include "Utilities/OpenGl/Context.h"
 #include "Utilities/OpenGl/Shader.h"
 #include "Utilities/OpenGl/Texture.h"
+#include "Utilities/OpenGl/Framebuffer.h"
+#include "Utilities/OpenGl/Renderbuffer.h"
 #include "Utilities/OpenGl/SSBO.h"
 #include "Utilities/ImGui/ImGuiInstance.h"
 #include "Utilities/OpenGl/VertexAttributeObject.h"
@@ -21,9 +23,6 @@ void MouseMovementCallback(GLFWwindow* window, double x, double y);
 Camera cam{ };
 
 std::shared_ptr<Window> window{ };
-
-unsigned int RBO{ 0 };
-unsigned int FBO{ 0 };
 
 int main() {
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
@@ -58,8 +57,10 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
     glEnableVertexAttribArray(0);
 
-    glGenFramebuffers(1, &FBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    Framebuffer framebuffer{ };
+
+    //glGenFramebuffers(1, &FBO);
+    //glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
     Texture texture{ window->size, Texture::Parameters{ 
         Texture::Format::RGB, 
@@ -68,20 +69,29 @@ int main() {
         Texture::FilteringMode::LINEAR 
     } };
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.Get(), 0);
+    framebuffer.AddTexture(texture, Framebuffer::TextureUses::COLOR_0);
+    
+    //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.Get(), 0);
 
-    glGenRenderbuffers(1, &RBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window->size.x, window->size.y);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+    Renderbuffer renderbuffer{ window->size };
+    //glGenRenderbuffers(1, &RBO);
+    //glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+    //glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window->size.x, window->size.y);
+    //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    framebuffer.AddRenderbuffer(renderbuffer, Framebuffer::RenderbufferUses::DEPTH_STENCIL);
+
+    if (!framebuffer.Check()) {
         std::cout << "ERROR, Framebuffer is not complete" << std::endl;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    framebuffer.Unbind();
+    texture.Unbind();
+    renderbuffer.Unbind();
+
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //glBindTexture(GL_TEXTURE_2D, 0);
+    //glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     float lastFrame = 0.0f;
 
@@ -93,6 +103,10 @@ int main() {
 
         imGui.StartNewFrame();
 
+        //ImGui::ShowDemoWindow();
+
+        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        
         // Show GUI
         { ImGui::Begin("Viewport");
             ImGui::Text("Hello World!");
@@ -100,9 +114,10 @@ int main() {
             const float window_width = ImGui::GetContentRegionAvail().x;
             const float window_height = ImGui::GetContentRegionAvail().y;
 
-            glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+            //glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+            framebuffer.Bind();
 
-            glBindTexture(GL_TEXTURE_2D, texture.Get());
+            texture.Bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -110,11 +125,12 @@ int main() {
 
             glViewport(0, 0, window_width, window_height);
 
-            glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+            renderbuffer.Bind();
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window_width, window_height);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderbuffer.Get());
 
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            framebuffer.Unbind();
 
             ImGui::Image((ImTextureID)texture.Get(), ImVec2{(float)window_width, (float)window_height});
 
@@ -145,7 +161,7 @@ int main() {
             cam.position -= cam.up * cam.movementSpeed * dt;
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+        framebuffer.Bind();
 
         // Prep for rendering
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -163,7 +179,7 @@ int main() {
         // Render
         glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        framebuffer.Unbind();
 
         // Finish the GUI frame
         imGui.FinishFrame();

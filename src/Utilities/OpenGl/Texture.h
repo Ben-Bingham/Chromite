@@ -60,6 +60,7 @@ public:
     ~Texture();
 
     void Bind();
+    void Unbind();
 
     unsigned int Get();
 

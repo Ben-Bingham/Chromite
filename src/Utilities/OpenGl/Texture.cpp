@@ -26,6 +26,10 @@ void Texture::Bind() {
     glBindTexture(GL_TEXTURE_2D, m_TextureHandle);
 }
 
+void Texture::Unbind() {
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 unsigned Texture::Get() {
     return m_TextureHandle;
 }
