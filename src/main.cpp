@@ -17,12 +17,16 @@
 #include "Utilities/OpenGl/Buffer.h"
 #include "Utilities/Camera.h"
 
+#include "Grid.h"
+
 Camera cam{ };
 
 std::shared_ptr<Window> window{ };
 
 glm::ivec2 imGuiWindowSize{ };
 glm::ivec2 lastImGuiWindowSize{ };
+
+Chromite::Grid grid{ };
 
 int main() {
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
@@ -37,9 +41,9 @@ int main() {
     mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
 
     std::vector<float> vertices{
-        -0.5f, 0.0f, 0.0f,
-        0.5f, 0.0f, 0.0f,
-        0.0f, 0.5f, 0.0f
+        -grid.gridLength, 0.0f, 0.0f,
+        grid.gridLength, 0.0f, 0.0f,
+        0.0f, grid.gridLength, 0.0f
     };
 
     std::vector<unsigned int> indices{
@@ -54,93 +58,11 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
     glEnableVertexAttribArray(0);
 
-    glm::ivec2 gridSize{ 100, 100 }; // Number of cells in the grid
-    glm::vec2 gridOrigin{ -5.0f, -5.0f }; // Top left corner of the grid
-    float gridLength = 0.1f; // The length of one of the squares of the grid
-    float n = 0.002f; // half the width of the grid walls
-
-    std::vector<float> gridVertices{ };
-
-    // TODO this could be done with instanced rendering if needed for performance
-    for (int x = 0; x <= gridSize.x; ++x) {
-        float x0 = gridOrigin.x - n + x * gridLength;
-        float y0 = gridOrigin.y - n;
-
-        float x1 = gridOrigin.x - n + x * gridLength;
-        float y1 = gridOrigin.y + gridSize.y * gridLength + n;
-
-        float x2 = gridOrigin.x + n + x * gridLength;
-        float y2 = gridOrigin.y + gridSize.y * gridLength + n;
-        
-        float x3 = gridOrigin.x + n + x * gridLength;
-        float y3 = gridOrigin.y - n;
-
-        gridVertices.push_back(x0);
-        gridVertices.push_back(y0);
-        gridVertices.push_back(0.0f);
-
-        gridVertices.push_back(x1);
-        gridVertices.push_back(y1);
-        gridVertices.push_back(0.0f);
-
-        gridVertices.push_back(x2);
-        gridVertices.push_back(y2);
-        gridVertices.push_back(0.0f);
-
-        gridVertices.push_back(x3);
-        gridVertices.push_back(y3);
-        gridVertices.push_back(0.0f);
-    }
-
-    for (int y = 0; y <= gridSize.y; ++y) {
-        for (int x = 0; x < gridSize.x; ++x) {
-            float x0 = gridOrigin.x + n + x * gridLength;
-            float y0 = gridOrigin.y - n + y * gridLength;
-
-            float x1 = gridOrigin.x + n + x * gridLength;
-            float y1 = gridOrigin.y + n + y * gridLength;
-
-            float x2 = gridOrigin.x + gridLength - n + x * gridLength;
-            float y2 = gridOrigin.y + n + y * gridLength;
-
-            float x3 = gridOrigin.x + gridLength - n + x * gridLength;
-            float y3 = gridOrigin.y - n + y * gridLength;
-
-            gridVertices.push_back(x0);
-            gridVertices.push_back(y0);
-            gridVertices.push_back(0.0f);
-
-            gridVertices.push_back(x1);
-            gridVertices.push_back(y1);
-            gridVertices.push_back(0.0f);
-
-            gridVertices.push_back(x2);
-            gridVertices.push_back(y2);
-            gridVertices.push_back(0.0f);
-
-            gridVertices.push_back(x3);
-            gridVertices.push_back(y3);
-            gridVertices.push_back(0.0f);
-        }
-    }
-
-    std::vector<unsigned int> gridIndices{ };
-    unsigned int j = 0;
-    for (int i = 0; i < gridVertices.size() / 12; ++i) {
-        gridIndices.push_back(0 + j);
-        gridIndices.push_back(1 + j);
-        gridIndices.push_back(3 + j);
-
-        gridIndices.push_back(1 + j);
-        gridIndices.push_back(2 + j);
-        gridIndices.push_back(3 + j);
-
-        j += 4;
-    }
+    Chromite::Grid::MeshData meshData = grid.GenerateMeshData();
 
     VertexAttributeObject gridVAO{ };
-    VertexBufferObject gridVBO{ gridVertices };
-    ElementBufferObject gridEBO{ gridIndices };
+    VertexBufferObject gridVBO{ meshData.vertices };
+    ElementBufferObject gridEBO{ meshData.indices };
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
     glEnableVertexAttribArray(0);
@@ -212,6 +134,21 @@ int main() {
             ImGui::Text("Frame time %3.4f", dt);
         } ImGui::End();
 
+        bool updatedGrid = false;
+        { ImGui::Begin("Settings");
+            if (ImGui::DragInt2("Grid Size", &grid.gridSize.x, 0.1f)) updatedGrid = true;
+            if (ImGui::DragFloat("Grid Width", &grid.n, 0.001f)) updatedGrid = true;
+            if (ImGui::DragFloat("Grid Square Size", &grid.gridLength, 0.001f)) updatedGrid = true;
+        } ImGui::End();
+
+        if (updatedGrid) {
+            Chromite::Grid::MeshData meshData = grid.GenerateMeshData();
+
+            gridVAO.Bind();
+            gridVBO.ReplaceData(meshData.vertices);
+            gridEBO.ReplaceData(meshData.indices);
+        }
+
         if (glfwGetKey(window->handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(window->handle, true);
         }
@@ -246,11 +183,17 @@ int main() {
         mainShader.SetMat4("mvp", mvp);
 
         // Render
-        //vao.Bind();
-        //glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
+
+        // Grid goes first to appear behind everthing
+        mainShader.SetVec4("color", glm::vec4{ 0.6f, 0.6f, 0.6f, 1.0f });
 
         gridVAO.Bind();
-        glDrawElements(GL_TRIANGLES, (unsigned int)gridIndices.size(), GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, (unsigned int)grid.indexCount, GL_UNSIGNED_INT, nullptr);
+
+
+        mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+        vao.Bind();
+        glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
 
         framebuffer.Unbind();
 
