@@ -19,6 +19,10 @@
 
 #include "Grid.h"
 
+#include "Components/Emitter.h"
+#include "Components/StraightWire.h"
+#include "Components/Printer.h"
+
 void MouseMovementCallback(GLFWwindow* window, double x, double y);
 glm::ivec2 windowMousePosition{ };
 
@@ -151,9 +155,9 @@ int main() {
 
             glm::vec4 viewport{ 0.0f, 0.0f, imGuiWindowSize.x, imGuiWindowSize.y };
 
-            glm::vec3 unProj = glm::unProject(glm::vec3{ (float)mousePosition.x, (float)mousePosition.y, 1.0f }, view, projection, viewport);
+            glm::vec3 mousePositionWorldspace = glm::unProject(glm::vec3{ (float)mousePosition.x, (float)mousePosition.y, 1.0f }, view, projection, viewport);
 
-            ImGui::Text("unProj Position (%.3f, %.3f, %.3f)", unProj.x, unProj.y, unProj.z);
+            ImGui::Text("Mouse Position World Space (%.3f, %.3f)", mousePositionWorldspace.x, mousePositionWorldspace.y, mousePositionWorldspace.z);
   
         } ImGui::End();
 
