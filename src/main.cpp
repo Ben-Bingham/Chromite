@@ -35,19 +35,19 @@ glm::ivec2 lastImGuiWindowSize{ };
 
 Chromite::Grid grid{ };
 
-std::vector<std::unique_ptr<Chromite::Component>> components{ };
+std::vector<Chromite::Component*> components{ };
 
 int main() {
     components.resize(3);
 
-    components[0] = std::make_unique<Chromite::Emitter>();
-    components[1] = std::make_unique<Chromite::StraightWire>();
+    components[0] = new Chromite::Emitter();
+    components[1] = new Chromite::StraightWire();
     components[1]->position = glm::ivec2{ 1, 0 };
-    components[2] = std::make_unique<Chromite::Printer>();
+    components[2] = new Chromite::Printer();
     components[2]->position = glm::ivec2{ 2, 0 };
 
-    components[0]->east = components[1].get();
-    components[1]->east = components[2].get();
+    components[0]->east = components[1];
+    components[1]->east = components[2];
 
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
 
@@ -125,7 +125,7 @@ int main() {
         lastFrame = currentFrame;
 
         if (counter == 60) {
-            dynamic_cast<Chromite::Emitter*>(components[0].get())->Emit();
+            dynamic_cast<Chromite::Emitter*>(components[0])->Emit();
 
             counter = 0;
         }
@@ -247,9 +247,9 @@ int main() {
             glm::mat4 mvp = projection * view * model;
             mainShader.SetMat4("mvp", mvp);
 
-            Chromite::Emitter* emitter = dynamic_cast<Chromite::Emitter*>(component.get());
-            Chromite::StraightWire* straightWire = dynamic_cast<Chromite::StraightWire*>(component.get());
-            Chromite::Printer* printer = dynamic_cast<Chromite::Printer*>(component.get());
+            Chromite::Emitter* emitter = dynamic_cast<Chromite::Emitter*>(component);
+            Chromite::StraightWire* straightWire = dynamic_cast<Chromite::StraightWire*>(component);
+            Chromite::Printer* printer = dynamic_cast<Chromite::Printer*>(component);
 
             if (emitter != nullptr) {
                 mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
@@ -282,6 +282,10 @@ int main() {
     }
 
     imGui.Cleanup();
+
+    for (auto component : components) {
+        delete component;
+    }
 }
 
 void MouseMovementCallback(GLFWwindow* window, double x, double y) {
