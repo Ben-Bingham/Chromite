@@ -27,6 +27,11 @@ void MouseMovementCallback(GLFWwindow* window, double x, double y);
 glm::ivec2 windowMousePosition{ };
 glm::ivec2 gridMousePosition{ };
 
+void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+bool updateGrid = false;
+
+float scrollSensitivity = 0.1f;
+
 Camera cam{ };
 
 std::shared_ptr<Window> window{ };
@@ -53,6 +58,7 @@ int main() {
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
 
     glfwSetCursorPosCallback(window->handle, MouseMovementCallback);
+    glfwSetScrollCallback(window->handle, ScrollCallback);
 
     Context context{ *window };
 
@@ -189,11 +195,14 @@ int main() {
 
         } ImGui::End();
 
-        bool updateGrid = false;
         { ImGui::Begin("Settings");
             if (ImGui::DragInt2("Grid Size", &grid.gridSize.x, 0.1f)) updateGrid = true;
             if (ImGui::DragFloat("Grid Width", &grid.n, 0.001f)) updateGrid = true;
             if (ImGui::DragFloat("Grid Square Size", &grid.gridLength, 0.001f)) updateGrid = true;
+
+            ImGui::Separator();
+
+            ImGui::DragFloat("Scroll Sensitivity", &scrollSensitivity, 0.0001f, 0.0f, 1.0f);
         } ImGui::End();
 
         if (updateGrid) {
@@ -220,6 +229,8 @@ int main() {
             vao.UnBind();
             vbo.UnBind();
             ebo.UnBind();
+
+            updateGrid = false;
         }
 
         if (glfwGetKey(window->handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -314,4 +325,13 @@ int main() {
 void MouseMovementCallback(GLFWwindow* window, double x, double y) {
     windowMousePosition.x = (int)x;
     windowMousePosition.y = (int)y;
+}
+
+void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    grid.gridLength += yoffset * scrollSensitivity;
+
+    if (grid.gridLength < 0.0001f) grid.gridLength = 0.0001f;
+    if (grid.gridLength > 100.0f) grid.gridLength = 100.0f;
+
+    updateGrid = true;
 }
