@@ -531,7 +531,9 @@ void MouseMovementCallback(GLFWwindow* window, double x, double y) {
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     grid.gridLength += (float)yoffset * scrollSensitivity;
 
-    if (grid.gridLength < 0.0001f) grid.gridLength = 0.0001f;
+    //grid.gridOrigin -= (yoffset * scrollSensitivity);
+
+    if (grid.gridLength < 0.05f) grid.gridLength = 0.05f;
     if (grid.gridLength > 100.0f) grid.gridLength = 100.0f;
 
     updateGrid = true;
