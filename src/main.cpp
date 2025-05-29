@@ -17,8 +17,6 @@
 #include "Utilities/OpenGl/Buffer.h"
 #include "Utilities/Camera.h"
 
-void MouseMovementCallback(GLFWwindow* window, double x, double y);
-
 Camera cam{ };
 
 std::shared_ptr<Window> window{ };
@@ -28,8 +26,6 @@ glm::ivec2 lastImGuiWindowSize{ };
 
 int main() {
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
-
-    glfwSetCursorPosCallback(window->handle, MouseMovementCallback);
 
     Context context{ *window };
 
@@ -129,23 +125,16 @@ int main() {
             glfwSetWindowShouldClose(window->handle, true);
         }
 
-        // Camera Movement
-        if (glfwGetKey(window->handle, GLFW_KEY_W) == GLFW_PRESS) {
-            cam.position += cam.forward * cam.movementSpeed * dt;
-        }
-        if (glfwGetKey(window->handle, GLFW_KEY_S) == GLFW_PRESS) {
-            cam.position -= cam.forward * cam.movementSpeed * dt;
-        }
         if (glfwGetKey(window->handle, GLFW_KEY_A) == GLFW_PRESS) {
             cam.position -= cam.right * cam.movementSpeed * dt;
         }
         if (glfwGetKey(window->handle, GLFW_KEY_D) == GLFW_PRESS) {
             cam.position += cam.right * cam.movementSpeed * dt;
         }
-        if (glfwGetKey(window->handle, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        if (glfwGetKey(window->handle, GLFW_KEY_S) == GLFW_PRESS) {
             cam.position += cam.up * cam.movementSpeed * dt;
         }
-        if (glfwGetKey(window->handle, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        if (glfwGetKey(window->handle, GLFW_KEY_W) == GLFW_PRESS) {
             cam.position -= cam.up * cam.movementSpeed * dt;
         }
 
@@ -157,7 +146,8 @@ int main() {
 
         glm::mat4 model{ 1.0f };
         glm::mat4 view = cam.ViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)imGuiWindowSize.x / (float)imGuiWindowSize.y, 0.01f, 100.0f);
+        float aspect = (float)imGuiWindowSize.x / (float)imGuiWindowSize.y;
+        glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.01f, 100.0f);
 
         glm::mat4 mvp = projection * view * model;
 
@@ -180,30 +170,4 @@ int main() {
     }
 
     imGui.Cleanup();
-}
-
-void MouseMovementCallback(GLFWwindow* window, double x, double y) {
-    //glm::vec2 pos{ (float)x, (float)y };
-
-    //if (cam.lastMousePos.x == std::numeric_limits<float>::max()) {
-    //    cam.lastMousePos = pos;
-    //}
-
-    //glm::vec2 posOffset{ pos.x - cam.lastMousePos.x, cam.lastMousePos.y - pos.y };
-
-    //cam.lastMousePos = pos;
-
-    //posOffset *= cam.lookSensitivity;
-
-    //cam.yaw += posOffset.x;
-    //cam.pitch += posOffset.y;
-
-    //cam.pitch = std::clamp(cam.pitch, -89.0f, 89.0f);
-
-    //cam.forward.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
-    //cam.forward.y = sin(glm::radians(cam.pitch));
-    //cam.forward.z = sin(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
-    //cam.forward = glm::normalize(cam.forward);
-
-    //cam.right = glm::normalize(glm::cross(cam.forward, cam.up));
 }
