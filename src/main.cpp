@@ -54,6 +54,110 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
     glEnableVertexAttribArray(0);
 
+    glm::ivec2 gridSize{ 100, 100 }; // Number of cells in the grid
+    glm::vec2 gridOrigin{ -5.0f, -5.0f }; // Top left corner of the grid
+    float gridLength = 0.1f; // The length of one of the squares of the grid
+    float n = 0.002f; // half the width of the grid walls
+
+    std::vector<float> gridVertices{ };
+
+    for (int x = 0; x <= gridSize.x; ++x) {
+        float x0 = gridOrigin.x - n + x * gridLength;
+        float y0 = gridOrigin.y - n;
+
+        float x1 = gridOrigin.x - n + x * gridLength;
+        float y1 = gridOrigin.y + gridSize.y * gridLength + n;
+
+        float x2 = gridOrigin.x + n + x * gridLength;
+        float y2 = gridOrigin.y + gridSize.y * gridLength + n;
+        
+        float x3 = gridOrigin.x + n + x * gridLength;
+        float y3 = gridOrigin.y - n;
+
+        // Triangle 1
+        gridVertices.push_back(x0);
+        gridVertices.push_back(y0);
+        gridVertices.push_back(0.0f);
+
+        gridVertices.push_back(x1);
+        gridVertices.push_back(y1);
+        gridVertices.push_back(0.0f);
+
+        gridVertices.push_back(x3);
+        gridVertices.push_back(y3);
+        gridVertices.push_back(0.0f);
+
+        // Triangle 2
+        gridVertices.push_back(x1);
+        gridVertices.push_back(y1);
+        gridVertices.push_back(0.0f);
+
+        gridVertices.push_back(x2);
+        gridVertices.push_back(y2);
+        gridVertices.push_back(0.0f);
+
+        gridVertices.push_back(x3);
+        gridVertices.push_back(y3);
+        gridVertices.push_back(0.0f);
+    }
+
+    for (int y = 0; y <= gridSize.y; ++y) {
+        for (int x = 0; x < gridSize.x; ++x) {
+            float x0 = gridOrigin.x + n + x * gridLength;
+            float y0 = gridOrigin.y - n + y * gridLength;
+
+            float x1 = gridOrigin.x + n + x * gridLength;
+            float y1 = gridOrigin.y + n + y * gridLength;
+
+            float x2 = gridOrigin.x + gridLength - n + x * gridLength;
+            float y2 = gridOrigin.y + n + y * gridLength;
+
+            float x3 = gridOrigin.x + gridLength - n + x * gridLength;
+            float y3 = gridOrigin.y - n + y * gridLength;
+
+            // Triangle 1
+            gridVertices.push_back(x0);
+            gridVertices.push_back(y0);
+            gridVertices.push_back(0.0f);
+
+            gridVertices.push_back(x1);
+            gridVertices.push_back(y1);
+            gridVertices.push_back(0.0f);
+
+            gridVertices.push_back(x3);
+            gridVertices.push_back(y3);
+            gridVertices.push_back(0.0f);
+
+            // Triangle 2
+            gridVertices.push_back(x1);
+            gridVertices.push_back(y1);
+            gridVertices.push_back(0.0f);
+
+            gridVertices.push_back(x2);
+            gridVertices.push_back(y2);
+            gridVertices.push_back(0.0f);
+
+            gridVertices.push_back(x3);
+            gridVertices.push_back(y3);
+            gridVertices.push_back(0.0f);
+        }
+    }
+
+    std::vector<unsigned int> gridIndices{ };
+    unsigned int j = 0;
+    for (int i = 0; i < gridVertices.size(); i += 3) {
+        gridIndices.push_back(j);
+
+        ++j;
+    }
+
+    VertexAttributeObject gridVAO{ };
+    VertexBufferObject gridVBO{ gridVertices };
+    ElementBufferObject gridEBO{ gridIndices };
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
+    glEnableVertexAttribArray(0);
+
     Framebuffer framebuffer{ };
 
     Texture texture{ window->size, Texture::Parameters{ 
@@ -155,7 +259,11 @@ int main() {
         mainShader.SetMat4("mvp", mvp);
 
         // Render
-        glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
+        //vao.Bind();
+        //glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
+
+        gridVAO.Bind();
+        glDrawElements(GL_TRIANGLES, (unsigned int)gridIndices.size(), GL_UNSIGNED_INT, nullptr);
 
         framebuffer.Unbind();
 
