@@ -22,12 +22,14 @@ Camera cam{ };
 
 std::shared_ptr<Window> window{ };
 
+unsigned int RBO{ 0 };
+unsigned int FBO{ 0 };
+
 int main() {
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
 
     glfwSetFramebufferSizeCallback(window->handle, FramebufferSizeCallback);
     glfwSetCursorPosCallback(window->handle, MouseMovementCallback);
-    glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     Context context{ *window };
 
@@ -56,6 +58,31 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
     glEnableVertexAttribArray(0);
 
+    glGenFramebuffers(1, &FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+    Texture texture{ window->size, Texture::Parameters{ 
+        Texture::Format::RGB, 
+        Texture::StorageType::UNSIGNED_BYTE, 
+        Texture::WrapMode::REPEAT,
+        Texture::FilteringMode::LINEAR 
+    } };
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.Get(), 0);
+
+    glGenRenderbuffers(1, &RBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window->size.x, window->size.y);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "ERROR, Framebuffer is not complete" << std::endl;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
     float lastFrame = 0.0f;
 
     while (!glfwWindowShouldClose(window->handle)) {
@@ -69,6 +96,29 @@ int main() {
         // Show GUI
         { ImGui::Begin("Viewport");
             ImGui::Text("Hello World!");
+
+            const float window_width = ImGui::GetContentRegionAvail().x;
+            const float window_height = ImGui::GetContentRegionAvail().y;
+
+            glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+            glBindTexture(GL_TEXTURE_2D, texture.Get());
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.Get(), 0);
+
+            glViewport(0, 0, window_width, window_height);
+
+            glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window_width, window_height);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            ImGui::Image((ImTextureID)texture.Get(), ImVec2{(float)window_width, (float)window_height});
+
+
         } ImGui::End();
 
         if (glfwGetKey(window->handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -95,6 +145,8 @@ int main() {
             cam.position -= cam.up * cam.movementSpeed * dt;
         }
 
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
         // Prep for rendering
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -110,6 +162,8 @@ int main() {
 
         // Render
         glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // Finish the GUI frame
         imGui.FinishFrame();
@@ -130,27 +184,27 @@ void FramebufferSizeCallback(GLFWwindow* w, int width, int height) {
 }
 
 void MouseMovementCallback(GLFWwindow* window, double x, double y) {
-    glm::vec2 pos{ (float)x, (float)y };
+    //glm::vec2 pos{ (float)x, (float)y };
 
-    if (cam.lastMousePos.x == std::numeric_limits<float>::max()) {
-        cam.lastMousePos = pos;
-    }
+    //if (cam.lastMousePos.x == std::numeric_limits<float>::max()) {
+    //    cam.lastMousePos = pos;
+    //}
 
-    glm::vec2 posOffset{ pos.x - cam.lastMousePos.x, cam.lastMousePos.y - pos.y };
+    //glm::vec2 posOffset{ pos.x - cam.lastMousePos.x, cam.lastMousePos.y - pos.y };
 
-    cam.lastMousePos = pos;
+    //cam.lastMousePos = pos;
 
-    posOffset *= cam.lookSensitivity;
+    //posOffset *= cam.lookSensitivity;
 
-    cam.yaw += posOffset.x;
-    cam.pitch += posOffset.y;
+    //cam.yaw += posOffset.x;
+    //cam.pitch += posOffset.y;
 
-    cam.pitch = std::clamp(cam.pitch, -89.0f, 89.0f);
+    //cam.pitch = std::clamp(cam.pitch, -89.0f, 89.0f);
 
-    cam.forward.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
-    cam.forward.y = sin(glm::radians(cam.pitch));
-    cam.forward.z = sin(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
-    cam.forward = glm::normalize(cam.forward);
+    //cam.forward.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
+    //cam.forward.y = sin(glm::radians(cam.pitch));
+    //cam.forward.z = sin(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
+    //cam.forward = glm::normalize(cam.forward);
 
-    cam.right = glm::normalize(glm::cross(cam.forward, cam.up));
+    //cam.right = glm::normalize(glm::cross(cam.forward, cam.up));
 }

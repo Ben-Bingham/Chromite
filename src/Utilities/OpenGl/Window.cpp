@@ -22,5 +22,4 @@ Window::Window(glm::ivec2 size, const std::string& name)
 
 Window::~Window() {
     glfwTerminate();
-
 }
