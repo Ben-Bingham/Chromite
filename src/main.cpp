@@ -591,10 +591,10 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
         auto newSouthIt = std::find_if(components.begin(), components.end(), [&newSouthPos](Chromite::Component* component) { return component->position == newSouthPos; });
         auto newWestIt = std::find_if(components.begin(), components.end(), [&newWestPos](Chromite::Component* component) { return component->position == newWestPos; });
 
-        if (newNorthIt != components.end()) draggedComponent->north = *newNorthIt;
-        if (newEastIt != components.end()) draggedComponent->east = *newEastIt;
-        if (newSouthIt != components.end()) draggedComponent->south = *newSouthIt;
-        if (newWestIt != components.end()) draggedComponent->west = *newWestIt;
+        if (newNorthIt != components.end()) { draggedComponent->north = *newNorthIt; (*newNorthIt)->south = draggedComponent; }
+        if (newEastIt != components.end()) { draggedComponent->east = *newEastIt; (*newEastIt)->west = draggedComponent; }
+        if (newSouthIt != components.end()) { draggedComponent->south = *newSouthIt; (*newSouthIt)->north = draggedComponent; }
+        if (newWestIt != components.end()) { draggedComponent->west = *newWestIt; (*newWestIt)->east = draggedComponent; }
 
         dragging = false;
         draggedComponent = nullptr;
