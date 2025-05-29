@@ -20,3 +20,17 @@ void Framebuffer::Unbind() {
 unsigned Framebuffer::Get() {
     return m_FramebufferHandle;
 }
+
+void Framebuffer::AddTexture(Texture& texture, TextureUses use) {
+    glFramebufferTexture2D(GL_FRAMEBUFFER, (int)use, GL_TEXTURE_2D, texture.Get(), 0);
+}
+
+void Framebuffer::AddRenderbuffer(Renderbuffer& renderbuffer, RenderbufferUses use) {
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, (int)use, GL_RENDERBUFFER, renderbuffer.Get());
+}
+
+bool Framebuffer::Check() {
+    Bind();
+
+    return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+}
