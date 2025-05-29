@@ -19,6 +19,9 @@
 
 #include "Grid.h"
 
+void MouseMovementCallback(GLFWwindow* window, double x, double y);
+glm::ivec2 windowMousePosition{ };
+
 Camera cam{ };
 
 std::shared_ptr<Window> window{ };
@@ -30,6 +33,8 @@ Chromite::Grid grid{ };
 
 int main() {
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
+
+    glfwSetCursorPosCallback(window->handle, MouseMovementCallback);
 
     Context context{ *window };
 
@@ -100,11 +105,13 @@ int main() {
 
         imGui.StartNewFrame();
 
-        //ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
 
         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
         
         // Show GUI
+        glm::ivec2 viewportOffset{ };
+
         { ImGui::Begin("Viewport");
             imGuiWindowSize = glm::ivec2{ ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y};
 
@@ -126,12 +133,28 @@ int main() {
                 framebuffer.Unbind();
             }
 
+            viewportOffset = glm::ivec2{ (int)ImGui::GetCursorPos().x, (int)ImGui::GetCursorPos().y };
             ImGui::Image((ImTextureID)texture.Get(), ImVec2{ (float)imGuiWindowSize.x, (float)imGuiWindowSize.y });
 
         } ImGui::End();
 
         { ImGui::Begin("Info");
             ImGui::Text("Frame time %3.4f", dt);
+
+            glm::ivec2 mousePosition = windowMousePosition - viewportOffset;
+
+            ImGui::Text("Mouse Position (%d, %d)", mousePosition.x, mousePosition.y);
+
+            glm::mat4 view = cam.ViewMatrix();
+            float aspect = (float)imGuiWindowSize.x / (float)imGuiWindowSize.y;
+            glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.01f, 100.0f);
+
+            glm::vec4 viewport{ 0.0f, 0.0f, imGuiWindowSize.x, imGuiWindowSize.y };
+
+            glm::vec3 unProj = glm::unProject(glm::vec3{ (float)mousePosition.x, (float)mousePosition.y, 1.0f }, view, projection, viewport);
+
+            ImGui::Text("unProj Position (%.3f, %.3f, %.3f)", unProj.x, unProj.y, unProj.z);
+  
         } ImGui::End();
 
         bool updateGrid = false;
@@ -208,4 +231,9 @@ int main() {
     }
 
     imGui.Cleanup();
+}
+
+void MouseMovementCallback(GLFWwindow* window, double x, double y) {
+    windowMousePosition.x = (int)x;
+    windowMousePosition.y = (int)y;
 }
