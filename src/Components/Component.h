@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 namespace Chromite {
 	class Component {
 	public:
@@ -18,5 +20,7 @@ namespace Chromite {
 		Component* east;
 		Component* south;
 		Component* west;
+
+		glm::ivec2 position{ };
 	};
 }

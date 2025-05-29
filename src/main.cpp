@@ -35,6 +35,8 @@ glm::ivec2 lastImGuiWindowSize{ };
 
 Chromite::Grid grid{ };
 
+std::vector<std::unique_ptr<Chromite::Component>> components{ };
+
 int main() {
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
 
@@ -50,13 +52,15 @@ int main() {
     mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
 
     std::vector<float> vertices{
-        -grid.gridLength, 0.0f, 0.0f,
+        0.0f, grid.gridLength, 0.0f,
+        grid.gridLength, grid.gridLength, 0.0f,
         grid.gridLength, 0.0f, 0.0f,
-        0.0f, grid.gridLength, 0.0f
+        0.0f,  0.0f, 0.0f
     };
 
     std::vector<unsigned int> indices{
-        1, 2, 3
+        0, 1, 2,
+        2, 3, 0
     };
 
     VertexAttributeObject vao{ };
@@ -216,7 +220,6 @@ int main() {
 
         gridVAO.Bind();
         glDrawElements(GL_TRIANGLES, (unsigned int)grid.indexCount, GL_UNSIGNED_INT, nullptr);
-
 
         mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
         vao.Bind();
