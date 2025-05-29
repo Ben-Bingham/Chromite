@@ -25,6 +25,7 @@
 
 void MouseMovementCallback(GLFWwindow* window, double x, double y);
 glm::ivec2 windowMousePosition{ };
+glm::ivec2 gridMousePosition{ };
 
 Camera cam{ };
 
@@ -180,8 +181,12 @@ int main() {
 
             glm::vec3 mousePositionWorldspace = glm::unProject(glm::vec3{ (float)mousePosition.x, (float)mousePosition.y, 1.0f }, view, projection, viewport);
 
-            ImGui::Text("Mouse Position World Space (%.3f, %.3f)", mousePositionWorldspace.x, mousePositionWorldspace.y, mousePositionWorldspace.z);
+            ImGui::Text("Mouse Position World Space (%.3f, %.3f)", mousePositionWorldspace.x, mousePositionWorldspace.y);
   
+            gridMousePosition = glm::floor(mousePositionWorldspace / grid.gridLength);
+
+            ImGui::Text("Mouse Grid Position (%d, %d)", gridMousePosition.x, gridMousePosition.y);
+
         } ImGui::End();
 
         bool updateGrid = false;
@@ -197,6 +202,24 @@ int main() {
             gridVAO.Bind();
             gridVBO.ReplaceData(meshData.vertices);
             gridEBO.ReplaceData(meshData.indices);
+
+            gridVAO.UnBind();
+            gridVBO.UnBind();
+            gridEBO.UnBind();
+
+            vertices = std::vector<float>{
+                0.0f, grid.gridLength, 0.0f,
+                grid.gridLength, grid.gridLength, 0.0f,
+                grid.gridLength, 0.0f, 0.0f,
+                0.0f,  0.0f, 0.0f
+            };
+
+            vao.Bind();
+            vbo.ReplaceData(vertices);
+
+            vao.UnBind();
+            vbo.UnBind();
+            ebo.UnBind();
         }
 
         if (glfwGetKey(window->handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {

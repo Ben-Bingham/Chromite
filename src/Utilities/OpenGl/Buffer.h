@@ -31,7 +31,13 @@ public:
         glBindBuffer(BUFFER_TYPE, m_Handle);
     }
 
+    void UnBind() {
+        glBindBuffer(BUFFER_TYPE, 0);
+    }
+
     void UpdateData(const std::vector<T>& data, size_t offset = 0) {
+        Bind();
+
         if (data.size() + offset <= m_BufferSize) {
             glBufferSubData(BUFFER_TYPE, offset, data.size(), (void*)data.data());
         }
@@ -43,6 +49,8 @@ public:
     }
 
     void ReplaceData(const std::vector<T>& data) {
+        Bind();
+
         glBufferData(BUFFER_TYPE, data.size() * sizeof(T), (void*)data.data(), m_DrawMode);
 
         m_BufferSize = data.size();
