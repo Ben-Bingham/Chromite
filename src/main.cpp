@@ -134,14 +134,14 @@ int main() {
             ImGui::Text("Frame time %3.4f", dt);
         } ImGui::End();
 
-        bool updatedGrid = false;
+        bool updateGrid = false;
         { ImGui::Begin("Settings");
-            if (ImGui::DragInt2("Grid Size", &grid.gridSize.x, 0.1f)) updatedGrid = true;
-            if (ImGui::DragFloat("Grid Width", &grid.n, 0.001f)) updatedGrid = true;
-            if (ImGui::DragFloat("Grid Square Size", &grid.gridLength, 0.001f)) updatedGrid = true;
+            if (ImGui::DragInt2("Grid Size", &grid.gridSize.x, 0.1f)) updateGrid = true;
+            if (ImGui::DragFloat("Grid Width", &grid.n, 0.001f)) updateGrid = true;
+            if (ImGui::DragFloat("Grid Square Size", &grid.gridLength, 0.001f)) updateGrid = true;
         } ImGui::End();
 
-        if (updatedGrid) {
+        if (updateGrid) {
             Chromite::Grid::MeshData meshData = grid.GenerateMeshData();
 
             gridVAO.Bind();
