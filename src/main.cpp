@@ -30,6 +30,13 @@ glm::ivec2 gridMousePosition{ };
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 bool updateGrid = false;
 
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+bool dragging = false;
+Chromite::Component* draggedComponent{ nullptr };
+glm::vec2 mouseOffsetWhenGrabbed{ 0.0f };
+
+glm::ivec2 viewportOffset{ };
+
 float scrollSensitivity = 0.1f;
 
 Camera cam{ };
@@ -59,6 +66,9 @@ int main() {
 
     glfwSetCursorPosCallback(window->handle, MouseMovementCallback);
     glfwSetScrollCallback(window->handle, ScrollCallback);
+    glfwSetMouseButtonCallback(window->handle, MouseButtonCallback);
+
+    glfwSwapInterval(1);
 
     Context context{ *window };
 
@@ -144,8 +154,6 @@ int main() {
         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
         
         // Show GUI
-        glm::ivec2 viewportOffset{ };
-
         { ImGui::Begin("Viewport");
             imGuiWindowSize = glm::ivec2{ ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y};
 
@@ -250,6 +258,8 @@ int main() {
             cam.position -= cam.up * cam.movementSpeed * dt;
         }
 
+        // Moving pieces
+
         framebuffer.Bind();
 
         // Prep for rendering
@@ -276,7 +286,19 @@ int main() {
 
         for (auto& component : components) {
             glm::mat4 model{ 1.0f };
-            model = glm::translate(model, glm::vec3{ component->position.x * grid.gridLength, component->position.y * grid.gridLength, 0.0f });
+
+            if (component == draggedComponent) {
+                glm::ivec2 mousePosition = windowMousePosition - viewportOffset;
+                glm::vec4 viewport{ 0.0f, 0.0f, imGuiWindowSize.x, imGuiWindowSize.y };
+
+                glm::vec3 mousePositionWorldspace = glm::unProject(glm::vec3{ (float)mousePosition.x, (float)mousePosition.y, 1.0f }, view, projection, viewport);
+
+                model = glm::translate(model, mousePositionWorldspace);
+                model = glm::translate(model, glm::vec3{ -mouseOffsetWhenGrabbed.x, -mouseOffsetWhenGrabbed.y, 0.0f });
+            }
+            else {
+                model = glm::translate(model, glm::vec3{ component->position.x * grid.gridLength, component->position.y * grid.gridLength, 0.0f });
+            }
 
             glm::mat4 mvp = projection * view * model;
             mainShader.SetMat4("mvp", mvp);
@@ -328,10 +350,46 @@ void MouseMovementCallback(GLFWwindow* window, double x, double y) {
 }
 
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-    grid.gridLength += yoffset * scrollSensitivity;
+    grid.gridLength += (float)yoffset * scrollSensitivity;
 
     if (grid.gridLength < 0.0001f) grid.gridLength = 0.0001f;
     if (grid.gridLength > 100.0f) grid.gridLength = 100.0f;
 
     updateGrid = true;
+}
+
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
+        for (auto& component : components) {
+            if (component->position == gridMousePosition) {
+                draggedComponent = component;
+                dragging = true;
+
+                glm::ivec2 mousePosition = windowMousePosition - viewportOffset;
+
+                glm::mat4 view = cam.ViewMatrix();
+                float aspect = (float)imGuiWindowSize.x / (float)imGuiWindowSize.y;
+                glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.01f, 100.0f);
+
+                glm::vec4 viewport{ 0.0f, 0.0f, imGuiWindowSize.x, imGuiWindowSize.y };
+
+                glm::vec3 mousePositionWorldspace = glm::unProject(glm::vec3{ (float)mousePosition.x, (float)mousePosition.y, 1.0f }, view, projection, viewport);
+
+                gridMousePosition = glm::floor(mousePositionWorldspace / grid.gridLength);
+
+                mouseOffsetWhenGrabbed = glm::vec2{ mousePositionWorldspace - glm::vec3{ grid.gridLength * component->position.x, grid.gridLength * component->position.y, 0.0f } };
+
+                std::cout << mouseOffsetWhenGrabbed.x << ", " << mouseOffsetWhenGrabbed.y << std::endl;
+
+                break;
+            }
+        }
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE) {
+        dragging = false;
+        draggedComponent = nullptr;
+
+        mouseOffsetWhenGrabbed = glm::vec2{ 0.0f };
+    }
 }
