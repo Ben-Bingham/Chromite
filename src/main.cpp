@@ -38,6 +38,17 @@ Chromite::Grid grid{ };
 std::vector<std::unique_ptr<Chromite::Component>> components{ };
 
 int main() {
+    components.resize(3);
+
+    components[0] = std::make_unique<Chromite::Emitter>();
+    components[1] = std::make_unique<Chromite::StraightWire>();
+    components[1]->position = glm::ivec2{ 1, 0 };
+    components[2] = std::make_unique<Chromite::Printer>();
+    components[2]->position = glm::ivec2{ 2, 0 };
+
+    components[0]->east = components[1].get();
+    components[1]->east = components[2].get();
+
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
 
     glfwSetCursorPosCallback(window->handle, MouseMovementCallback);
@@ -105,15 +116,23 @@ int main() {
 
     float lastFrame = 0.0f;
 
+    int counter = 0;
+
     while (!glfwWindowShouldClose(window->handle)) {
         float currentFrame = (float)glfwGetTime();
 
         float dt = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        if (counter == 60) {
+            dynamic_cast<Chromite::Emitter*>(components[0].get())->Emit();
+
+            counter = 0;
+        }
+
         imGui.StartNewFrame();
 
-        ImGui::ShowDemoWindow();
+        //ImGui::ShowDemoWindow();
 
         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
         
@@ -221,9 +240,32 @@ int main() {
         gridVAO.Bind();
         glDrawElements(GL_TRIANGLES, (unsigned int)grid.indexCount, GL_UNSIGNED_INT, nullptr);
 
-        mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-        vao.Bind();
-        glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
+        for (auto& component : components) {
+            glm::mat4 model{ 1.0f };
+            model = glm::translate(model, glm::vec3{ component->position.x * grid.gridLength, component->position.y * grid.gridLength, 0.0f });
+
+            glm::mat4 mvp = projection * view * model;
+            mainShader.SetMat4("mvp", mvp);
+
+            Chromite::Emitter* emitter = dynamic_cast<Chromite::Emitter*>(component.get());
+            Chromite::StraightWire* straightWire = dynamic_cast<Chromite::StraightWire*>(component.get());
+            Chromite::Printer* printer = dynamic_cast<Chromite::Printer*>(component.get());
+
+            if (emitter != nullptr) {
+                mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+            }
+
+            if (straightWire != nullptr) {
+                mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+            }
+
+            if (printer != nullptr) {
+                mainShader.SetVec4("color", glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
+            }
+
+            vao.Bind();
+            glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
+        }
 
         framebuffer.Unbind();
 
@@ -235,6 +277,8 @@ int main() {
         glfwPollEvents();
 
         lastImGuiWindowSize = imGuiWindowSize;
+
+        ++counter;
     }
 
     imGui.Cleanup();
