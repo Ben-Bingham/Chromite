@@ -23,6 +23,8 @@
 #include "Components/StraightWire.h"
 #include "Components/Printer.h"
 
+#define DEBUG
+
 void MouseMovementCallback(GLFWwindow* window, double x, double y);
 glm::ivec2 windowMousePosition{ };
 glm::ivec2 gridMousePosition{ };
@@ -60,7 +62,9 @@ int main() {
     components[2]->position = glm::ivec2{ 2, 0 };
 
     components[0]->east = components[1];
+    components[1]->west = components[0];
     components[1]->east = components[2];
+    components[2]->west = components[1];
 
     window = std::make_shared<Window>(glm::ivec2{ 1600, 1000 }, "Chromite");
 
@@ -78,6 +82,80 @@ int main() {
     Shader mainShader{ "assets\\shaders\\main.vert", "assets\\shaders\\main.frag" };
     mainShader.Bind();
     mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+
+#ifdef DEBUG
+    // North
+    std::vector<float> northVertices {
+        grid.gridLength / 4.0f, -grid.gridLength / 4.0f, 0.0f,
+        grid.gridLength / 4.0f, grid.gridLength / 4.0f, 0.0f
+    };
+
+    std::vector<unsigned int> northIndices{
+        0, 1
+    };
+
+    VertexAttributeObject northVao{ };
+
+    VertexBufferObject northVbo{ northVertices };
+    ElementBufferObject northEbo{ northIndices };
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // East
+    std::vector<float> eastVertices{
+        grid.gridLength - (grid.gridLength / 4.0f), grid.gridLength / 4.0f, 0.0f,
+        grid.gridLength + (grid.gridLength / 4.0f), grid.gridLength / 4.0f, 0.0f
+    };
+
+    std::vector<unsigned int> eastIndices{
+        0, 1
+    };
+
+    VertexAttributeObject eastVao{ };
+
+    VertexBufferObject eastVbo{ eastVertices };
+    ElementBufferObject eastEbo{ eastIndices };
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // South
+    std::vector<float> southVertices{
+        grid.gridLength / 4.0f * 3.0f, grid.gridLength - (grid.gridLength / 4.0f), 0.0f,
+        grid.gridLength / 4.0f * 3.0f, grid.gridLength + (grid.gridLength / 4.0f), 0.0f
+    };
+
+    std::vector<unsigned int> southIndices{
+        0, 1
+    };
+
+    VertexAttributeObject southVao{ };
+
+    VertexBufferObject southVbo{ southVertices };
+    ElementBufferObject southEbo{ southIndices };
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // West
+    std::vector<float> westVertices{
+        -grid.gridLength / 4.0f, grid.gridLength / 4.0f * 3.0f, 0.0f,
+        grid.gridLength / 4.0f, grid.gridLength / 4.0f * 3.0f, 0.0f
+    };
+
+    std::vector<unsigned int> westIndices{
+        0, 1
+    };
+
+    VertexAttributeObject westVao{ };
+
+    VertexBufferObject westVbo{ westVertices };
+    ElementBufferObject westEbo{ westIndices };
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
+    glEnableVertexAttribArray(0);
+#endif
 
     std::vector<float> vertices{
         0.0f, grid.gridLength, 0.0f,
@@ -238,6 +316,61 @@ int main() {
             vbo.UnBind();
             ebo.UnBind();
 
+#ifdef DEBUG
+            // North
+            northVertices = std::vector<float>{
+                grid.gridLength / 4.0f, -grid.gridLength / 4.0f, 0.0f,
+                grid.gridLength / 4.0f, grid.gridLength / 4.0f, 0.0f
+            };
+
+            northVao.Bind();
+            northVbo.ReplaceData(northVertices);
+
+            northVao.UnBind();
+            northVbo.UnBind();
+            northEbo.UnBind();
+
+            // East
+            eastVertices = std::vector<float>{
+                grid.gridLength - (grid.gridLength / 4.0f), grid.gridLength / 4.0f, 0.0f,
+                grid.gridLength + (grid.gridLength / 4.0f), grid.gridLength / 4.0f, 0.0f
+            };
+
+            eastVao.Bind();
+            eastVbo.ReplaceData(eastVertices);
+
+            eastVao.UnBind();
+            eastVbo.UnBind();
+            eastEbo.UnBind();
+
+            // South
+            southVertices = std::vector<float>{
+                grid.gridLength / 4.0f * 3.0f, grid.gridLength - (grid.gridLength / 4.0f), 0.0f,
+                grid.gridLength / 4.0f * 3.0f, grid.gridLength + (grid.gridLength / 4.0f), 0.0f
+            };
+
+            southVao.Bind();
+            southVbo.ReplaceData(southVertices);
+
+            southVao.UnBind();
+            southVbo.UnBind();
+            southEbo.UnBind();
+
+            // West
+            westVertices = std::vector<float>{
+                -grid.gridLength / 4.0f, grid.gridLength / 4.0f * 3.0f, 0.0f,
+                grid.gridLength / 4.0f, grid.gridLength / 4.0f * 3.0f, 0.0f
+            };
+
+            westVao.Bind();
+            westVbo.ReplaceData(westVertices);
+
+            westVao.UnBind();
+            westVbo.UnBind();
+            westEbo.UnBind();
+#endif
+
+
             updateGrid = false;
         }
 
@@ -266,19 +399,20 @@ int main() {
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 model{ 1.0f };
         glm::mat4 view = cam.ViewMatrix();
         float aspect = (float)imGuiWindowSize.x / (float)imGuiWindowSize.y;
         glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.01f, 100.0f);
 
-        glm::mat4 mvp = projection * view * model;
-
         mainShader.Bind();
-        mainShader.SetMat4("mvp", mvp);
 
         // Render
 
         // Grid goes first to appear behind everthing
+        glm::mat4 model{ 1.0f };
+        glm::mat4 mvp = projection * view * model;
+
+        mainShader.SetMat4("mvp", mvp);
+
         mainShader.SetVec4("color", glm::vec4{ 0.6f, 0.6f, 0.6f, 1.0f });
 
         gridVAO.Bind();
@@ -308,11 +442,11 @@ int main() {
             Chromite::Printer* printer = dynamic_cast<Chromite::Printer*>(component);
 
             if (emitter != nullptr) {
-                mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+                mainShader.SetVec4("color", glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
             }
 
             if (straightWire != nullptr) {
-                mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+                mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
             }
 
             if (printer != nullptr) {
@@ -322,6 +456,40 @@ int main() {
             vao.Bind();
             glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
         }
+
+#ifdef DEBUG // Render DEBUG last so that it appears above everything else
+        for (auto& component : components) {
+            glm::mat4 model{ 1.0f };
+            model = glm::translate(model, glm::vec3{ component->position.x * grid.gridLength, component->position.y * grid.gridLength, 0.0f });
+
+            glm::mat4 mvp = projection * view * model;
+            mainShader.SetMat4("mvp", mvp);
+
+            mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+            if (component->north == nullptr) mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+
+            northVao.Bind();
+            glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr);
+
+            mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+            if (component->east == nullptr) mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+
+            eastVao.Bind();
+            glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr);
+
+            mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+            if (component->south == nullptr) mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+
+            southVao.Bind();
+            glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr);
+
+            mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+            if (component->west == nullptr) mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+
+            westVao.Bind();
+            glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr);
+        }
+#endif
 
         framebuffer.Unbind();
 
