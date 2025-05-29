@@ -61,6 +61,7 @@ int main() {
 
     std::vector<float> gridVertices{ };
 
+    // TODO this could be done with instanced rendering if needed for performance
     for (int x = 0; x <= gridSize.x; ++x) {
         float x0 = gridOrigin.x - n + x * gridLength;
         float y0 = gridOrigin.y - n;
@@ -74,20 +75,10 @@ int main() {
         float x3 = gridOrigin.x + n + x * gridLength;
         float y3 = gridOrigin.y - n;
 
-        // Triangle 1
         gridVertices.push_back(x0);
         gridVertices.push_back(y0);
         gridVertices.push_back(0.0f);
 
-        gridVertices.push_back(x1);
-        gridVertices.push_back(y1);
-        gridVertices.push_back(0.0f);
-
-        gridVertices.push_back(x3);
-        gridVertices.push_back(y3);
-        gridVertices.push_back(0.0f);
-
-        // Triangle 2
         gridVertices.push_back(x1);
         gridVertices.push_back(y1);
         gridVertices.push_back(0.0f);
@@ -115,20 +106,10 @@ int main() {
             float x3 = gridOrigin.x + gridLength - n + x * gridLength;
             float y3 = gridOrigin.y - n + y * gridLength;
 
-            // Triangle 1
             gridVertices.push_back(x0);
             gridVertices.push_back(y0);
             gridVertices.push_back(0.0f);
 
-            gridVertices.push_back(x1);
-            gridVertices.push_back(y1);
-            gridVertices.push_back(0.0f);
-
-            gridVertices.push_back(x3);
-            gridVertices.push_back(y3);
-            gridVertices.push_back(0.0f);
-
-            // Triangle 2
             gridVertices.push_back(x1);
             gridVertices.push_back(y1);
             gridVertices.push_back(0.0f);
@@ -145,10 +126,16 @@ int main() {
 
     std::vector<unsigned int> gridIndices{ };
     unsigned int j = 0;
-    for (int i = 0; i < gridVertices.size(); i += 3) {
-        gridIndices.push_back(j);
+    for (int i = 0; i < gridVertices.size() / 12; ++i) {
+        gridIndices.push_back(0 + j);
+        gridIndices.push_back(1 + j);
+        gridIndices.push_back(3 + j);
 
-        ++j;
+        gridIndices.push_back(1 + j);
+        gridIndices.push_back(2 + j);
+        gridIndices.push_back(3 + j);
+
+        j += 4;
     }
 
     VertexAttributeObject gridVAO{ };
