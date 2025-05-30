@@ -31,6 +31,7 @@ glm::ivec2 gridMousePosition{ };
 
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 bool updateGrid = false;
+float zoom{ 1.0f };
 
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 bool dragging = false;
@@ -41,7 +42,7 @@ glm::ivec2 viewportOffset{ };
 
 float scrollSensitivity = 0.1f;
 
-Camera cam{ };
+Camera cam{ 1.0f };
 
 std::shared_ptr<Window> window{ };
 
@@ -267,7 +268,7 @@ int main() {
 
             glm::mat4 view = cam.ViewMatrix();
             float aspect = (float)imGuiWindowSize.x / (float)imGuiWindowSize.y;
-            glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.01f, 100.0f);
+            glm::mat4 projection = glm::ortho(-aspect / zoom, aspect / zoom, -1.0f / zoom, 1.0f / zoom, 0.01f, 100.0f);
 
             glm::vec4 viewport{ 0.0f, 0.0f, imGuiWindowSize.x, imGuiWindowSize.y };
 
@@ -401,7 +402,7 @@ int main() {
 
         glm::mat4 view = cam.ViewMatrix();
         float aspect = (float)imGuiWindowSize.x / (float)imGuiWindowSize.y;
-        glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.01f, 100.0f);
+        glm::mat4 projection = glm::ortho(-aspect / zoom, aspect / zoom, -1.0f / zoom, 1.0f / zoom, 0.01f, 100.0f);
 
         mainShader.Bind();
 
@@ -476,24 +477,28 @@ int main() {
             glm::mat4 mvp = projection * view * model;
             mainShader.SetMat4("mvp", mvp);
 
+            // North
             mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
             if (component->north == nullptr) mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 
             northVao.Bind();
             glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr);
 
+            // East
             mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
             if (component->east == nullptr) mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-
+            
             eastVao.Bind();
             glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr);
 
+            // South
             mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
             if (component->south == nullptr) mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 
             southVao.Bind();
             glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr);
 
+            // West
             mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
             if (component->west == nullptr) mainShader.SetVec4("color", glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 
@@ -529,12 +534,10 @@ void MouseMovementCallback(GLFWwindow* window, double x, double y) {
 }
 
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-    grid.gridLength += (float)yoffset * scrollSensitivity;
+    zoom += (float)yoffset * scrollSensitivity;
 
-    //grid.gridOrigin -= (yoffset * scrollSensitivity);
-
-    if (grid.gridLength < 0.05f) grid.gridLength = 0.05f;
-    if (grid.gridLength > 100.0f) grid.gridLength = 100.0f;
+    if (zoom < 0.5f) zoom = 0.5f;
+    if (zoom > 4.0f) zoom = 4.0f;
 
     updateGrid = true;
 }
@@ -550,7 +553,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 
                 glm::mat4 view = cam.ViewMatrix();
                 float aspect = (float)imGuiWindowSize.x / (float)imGuiWindowSize.y;
-                glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.01f, 100.0f);
+                glm::mat4 projection = glm::ortho(-aspect / zoom, aspect / zoom, -1.0f / zoom, 1.0f / zoom, 0.01f, 100.0f);
 
                 glm::vec4 viewport{ 0.0f, 0.0f, imGuiWindowSize.x, imGuiWindowSize.y };
 
@@ -559,8 +562,6 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
                 gridMousePosition = glm::floor(mousePositionWorldspace / grid.gridLength);
 
                 mouseOffsetWhenGrabbed = glm::vec2{ mousePositionWorldspace - glm::vec3{ grid.gridLength * component->position.x, grid.gridLength * component->position.y, 0.0f } };
-
-                std::cout << mouseOffsetWhenGrabbed.x << ", " << mouseOffsetWhenGrabbed.y << std::endl;
 
                 break;
             }
@@ -574,7 +575,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 
         glm::mat4 view = cam.ViewMatrix();
         float aspect = (float)imGuiWindowSize.x / (float)imGuiWindowSize.y;
-        glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.01f, 100.0f);
+        glm::mat4 projection = glm::ortho(-aspect / zoom, aspect / zoom, -1.0f / zoom, 1.0f / zoom, 0.01f, 100.0f);
 
         glm::vec4 viewport{ 0.0f, 0.0f, imGuiWindowSize.x, imGuiWindowSize.y };
 
@@ -589,9 +590,9 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 
         draggedComponent->position = newPos;
 
-        glm::ivec2 newNorthPos = newPos + glm::ivec2{ 0, 1 };
+        glm::ivec2 newNorthPos = newPos + glm::ivec2{ 0, -1 };
         glm::ivec2 newEastPos = newPos + glm::ivec2{ 1, 0 };
-        glm::ivec2 newSouthPos = newPos + glm::ivec2{ 0, -1 };
+        glm::ivec2 newSouthPos = newPos + glm::ivec2{ 0, 1 };
         glm::ivec2 newWestPos = newPos + glm::ivec2{ -1, 0 };
 
         draggedComponent->north = nullptr;
