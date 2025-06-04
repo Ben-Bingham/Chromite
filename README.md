@@ -1,5 +1,5 @@
 # Chromite
-## A WIP low level circuit emulator
+### A work in progress low level circuit emulator
 
 ![alt text](https://github.com/Ben-Bingham/Chromite/raw/main/Gallery/WIP.png "WIP image")
 
