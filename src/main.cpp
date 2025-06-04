@@ -23,7 +23,7 @@
 #include "Components/StraightWire.h"
 #include "Components/Printer.h"
 
-#define DEBUG
+//#define DEBUG
 
 void MouseMovementCallback(GLFWwindow* window, double x, double y);
 glm::ivec2 windowMousePosition{ };
@@ -169,8 +169,8 @@ int main() {
 
     Texture2D_Array atlas{ std::vector<std::string>{
         "assets\\sprites\\straight-wire.png",
-        "assets\\sprites\\emitter-one-sided.png",
-        "assets\\sprites\\light-one-sided.png"
+        "assets\\sprites\\emitter-four-sides.png",
+        "assets\\sprites\\light-four-sides.png"
     }, atlasParams, false };
 
     enum class AtlasEnum {
