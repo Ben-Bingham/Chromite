@@ -80,6 +80,9 @@ int main() {
 
     Context context{ *window };
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     ImGuiInstance imGui{ };
     imGui.Init(window->handle);
 
@@ -168,7 +171,7 @@ int main() {
         "assets\\sprites\\straight-wire.png",
         "assets\\sprites\\emitter-one-sided.png",
         "assets\\sprites\\light-one-sided.png"
-    }, atlasParams };
+    }, atlasParams, false };
 
     std::vector<float> vertices{
         0.0f,               grid.gridLength,    0.0f,       0.0f, 1.0f,

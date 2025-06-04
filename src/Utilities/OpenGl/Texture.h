@@ -84,9 +84,9 @@ public:
 
         int width, height, nrChannels;
         stbi_set_flip_vertically_on_load(flip);
-        unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 3);
+        unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
         if (data) {
-            glTexImage2D(TEXTURE_TYPE, 0, (int)parameters.imageFormat, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(TEXTURE_TYPE, 0, (int)parameters.imageFormat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(TEXTURE_TYPE);
         }
         else {
@@ -116,7 +116,7 @@ public:
         size_t i = 0;
         for (auto& path : paths) {
             int w, h, c;
-            unsigned char* d = stbi_load(path.c_str(), &w, &h, &c, 3);
+            unsigned char* d = stbi_load(path.c_str(), &w, &h, &c, 4);
 
             if ((w != width && width != -1) || (h != height && height != -1)) {
                 std::cout << "Not all images: " << std::endl;
@@ -135,7 +135,7 @@ public:
             channels = c;
 
             if (d) {
-                data[i].resize(width * height * 3);
+                data[i].resize(width * height * 4);
 
                 std::memcpy((void*)data[i].data(), (void*)d, data[i].size());
 
@@ -149,10 +149,10 @@ public:
             ++i;
         }
 
-        glTexStorage3D(TEXTURE_TYPE, 3, GL_RGB8, width, height, (int)paths.size());
+        glTexStorage3D(TEXTURE_TYPE, 1, GL_RGBA8, width, height, (int)paths.size());
 
         for (size_t i = 0; i < data.size(); ++i) {
-            glTexSubImage3D(TEXTURE_TYPE, 0, 0, 0, (int)i, width, height, 1, GL_RGB, GL_UNSIGNED_BYTE, (void*)data[i].data());
+            glTexSubImage3D(TEXTURE_TYPE, 0, 0, 0, (int)i, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)data[i].data());
         }
 
         glGenerateMipmap(TEXTURE_TYPE);
