@@ -21,7 +21,7 @@ unsigned Framebuffer::Get() {
     return m_FramebufferHandle;
 }
 
-void Framebuffer::AddTexture(Texture& texture, TextureUses use) {
+void Framebuffer::AddTexture(Texture2D& texture, TextureUses use) {
     glFramebufferTexture2D(GL_FRAMEBUFFER, (int)use, GL_TEXTURE_2D, texture.Get(), 0);
 }
 

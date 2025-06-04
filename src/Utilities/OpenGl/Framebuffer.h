@@ -28,7 +28,7 @@ public:
 
     unsigned int Get();
 
-    void AddTexture(Texture& texture, TextureUses use);
+    void AddTexture(Texture2D& texture, TextureUses use);
     void AddRenderbuffer(Renderbuffer& renderbuffer, RenderbufferUses use);
 
     bool Check();

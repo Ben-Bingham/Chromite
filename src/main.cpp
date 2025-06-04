@@ -53,6 +53,9 @@ Chromite::Grid grid{ };
 
 std::vector<Chromite::Component*> components{ };
 
+int x = 0;
+int y = 0;
+
 int main() {
     components.resize(3);
 
@@ -81,8 +84,7 @@ int main() {
     imGui.Init(window->handle);
 
     Shader mainShader{ "assets\\shaders\\main.vert", "assets\\shaders\\main.frag" };
-    mainShader.Bind();
-    mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+    Shader atlasShader{ "assets\\shaders\\atlas.vert", "assets\\shaders\\atlas.frag" };
 
 #ifdef DEBUG
     // North
@@ -158,11 +160,21 @@ int main() {
     glEnableVertexAttribArray(0);
 #endif
 
+    TextureParameters atlasParams{ };
+    atlasParams.magFilter = TextureFilteringMode::NEAREST;
+    atlasParams.minFilter = TextureFilteringMode::NEAREST;
+
+    Texture2D_Array atlas{ std::vector<std::string>{
+        "assets\\sprites\\straight-wire.png",
+        "assets\\sprites\\emitter-one-sided.png",
+        "assets\\sprites\\light-one-sided.png"
+    }, atlasParams };
+
     std::vector<float> vertices{
-        0.0f, grid.gridLength, 0.0f,
-        grid.gridLength, grid.gridLength, 0.0f,
-        grid.gridLength, 0.0f, 0.0f,
-        0.0f,  0.0f, 0.0f
+        0.0f,               grid.gridLength,    0.0f,       0.0f, 1.0f,
+        grid.gridLength,    grid.gridLength,    0.0f,       1.0f, 1.0f,
+        grid.gridLength,    0.0f,               0.0f,       1.0f, 0.0f,
+        0.0f,               0.0f,               0.0f,       0.0f, 0.0f
     };
 
     std::vector<unsigned int> indices{
@@ -175,8 +187,11 @@ int main() {
     VertexBufferObject vbo{ vertices };
     ElementBufferObject ebo{ indices };
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     Chromite::Grid::MeshData meshData = grid.GenerateMeshData();
 
@@ -189,11 +204,11 @@ int main() {
 
     Framebuffer framebuffer{ };
 
-    Texture texture{ window->size, Texture::Parameters{ 
-        Texture::Format::RGB, 
-        Texture::StorageType::UNSIGNED_BYTE, 
-        Texture::WrapMode::REPEAT,
-        Texture::FilteringMode::LINEAR 
+    Texture2D texture{ window->size, TextureParameters{
+        TextureFormat::RGB, 
+        TextureStorageType::UNSIGNED_BYTE, 
+        TextureWrapMode::REPEAT,
+        TextureFilteringMode::LINEAR 
     } };
 
     framebuffer.AddTexture(texture, Framebuffer::TextureUses::COLOR_0);
@@ -304,10 +319,10 @@ int main() {
             gridEBO.UnBind();
 
             vertices = std::vector<float>{
-                0.0f, grid.gridLength, 0.0f,
-                grid.gridLength, grid.gridLength, 0.0f,
-                grid.gridLength, 0.0f, 0.0f,
-                0.0f,  0.0f, 0.0f
+                0.0f,               grid.gridLength,    0.0f,       0.0f, 1.0f,
+                grid.gridLength,    grid.gridLength,    0.0f,       1.0f, 1.0f,
+                grid.gridLength,    0.0f,               0.0f,       1.0f, 0.0f,
+                0.0f,               0.0f,               0.0f,       0.0f, 0.0f
             };
 
             vao.Bind();
@@ -371,7 +386,6 @@ int main() {
             westEbo.UnBind();
 #endif
 
-
             updateGrid = false;
         }
 
@@ -391,8 +405,6 @@ int main() {
         if (glfwGetKey(window->handle, GLFW_KEY_W) == GLFW_PRESS) {
             cam.position -= cam.up * cam.movementSpeed * dt;
         }
-
-        // Moving pieces
 
         framebuffer.Bind();
 
@@ -419,6 +431,12 @@ int main() {
         gridVAO.Bind();
         glDrawElements(GL_TRIANGLES, (unsigned int)grid.indexCount, GL_UNSIGNED_INT, nullptr);
 
+        atlasShader.Bind();
+
+        atlas.ActivateUnit(0);
+        atlas.Bind();
+        atlasShader.SetInt("atlas", 0);
+
         for (auto& component : components) {
             glm::mat4 model{ 1.0f };
 
@@ -436,27 +454,29 @@ int main() {
             }
 
             glm::mat4 mvp = projection * view * model;
-            mainShader.SetMat4("mvp", mvp);
+            atlasShader.SetMat4("mvp", mvp);
 
             Chromite::Emitter* emitter = dynamic_cast<Chromite::Emitter*>(component);
             Chromite::StraightWire* straightWire = dynamic_cast<Chromite::StraightWire*>(component);
             Chromite::Printer* printer = dynamic_cast<Chromite::Printer*>(component);
 
             if (emitter != nullptr) {
-                mainShader.SetVec4("color", glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
+                atlasShader.SetVec4("color", glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
             }
 
             if (straightWire != nullptr) {
-                mainShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+                atlasShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
             }
 
             if (printer != nullptr) {
-                mainShader.SetVec4("color", glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
+                atlasShader.SetVec4("color", glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
             }
 
             vao.Bind();
             glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, nullptr);
         }
+
+        mainShader.Bind();
 
 #ifdef DEBUG // Render DEBUG last so that it appears above everything else
         for (auto& component : components) {
