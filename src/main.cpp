@@ -173,6 +173,12 @@ int main() {
         "assets\\sprites\\light-one-sided.png"
     }, atlasParams, false };
 
+    enum class AtlasEnum {
+        STRAIGHT_WIRE=0,
+        EMITTER_ONE_SIDED=1,
+        LIGHT_ONE_SIDED=2
+    };
+
     std::vector<float> vertices{
         0.0f,               grid.gridLength,    0.0f,       0.0f, 1.0f,
         grid.gridLength,    grid.gridLength,    0.0f,       1.0f, 1.0f,
@@ -464,15 +470,15 @@ int main() {
             Chromite::Printer* printer = dynamic_cast<Chromite::Printer*>(component);
 
             if (emitter != nullptr) {
-                atlasShader.SetVec4("color", glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
+                atlasShader.SetInt("atlasIndex", (int)AtlasEnum::EMITTER_ONE_SIDED);
             }
 
             if (straightWire != nullptr) {
-                atlasShader.SetVec4("color", glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+                atlasShader.SetInt("atlasIndex", (int)AtlasEnum::STRAIGHT_WIRE);
             }
 
             if (printer != nullptr) {
-                atlasShader.SetVec4("color", glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
+                atlasShader.SetInt("atlasIndex", (int)AtlasEnum::LIGHT_ONE_SIDED);
             }
 
             vao.Bind();

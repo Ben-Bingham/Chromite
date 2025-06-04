@@ -2,12 +2,12 @@
 
 out vec4 outFragColor;
 
-uniform vec4 color;
+uniform int atlasIndex;
 
 uniform sampler2DArray atlas;
 
 in vec2 UV;
 
 void main() {
-   outFragColor = vec4(texture(atlas, vec3(UV, 0)).xyzw);
+   outFragColor = vec4(texture(atlas, vec3(UV, atlasIndex)).xyzw);
 }
