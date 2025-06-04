@@ -38,6 +38,8 @@ bool dragging = false;
 Chromite::Component* draggedComponent{ nullptr };
 glm::vec2 mouseOffsetWhenGrabbed{ 0.0f };
 
+void KeyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
 glm::ivec2 viewportOffset{ };
 
 float scrollSensitivity = 0.1f;
@@ -75,7 +77,7 @@ int main() {
     glfwSetCursorPosCallback(window->handle, MouseMovementCallback);
     glfwSetScrollCallback(window->handle, ScrollCallback);
     glfwSetMouseButtonCallback(window->handle, MouseButtonCallback);
-
+    glfwSetKeyCallback(window->handle, KeyboardCallback);
     glfwSwapInterval(1);
 
     Context context{ *window };
@@ -650,5 +652,27 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
         draggedComponent = nullptr;
 
         mouseOffsetWhenGrabbed = glm::vec2{ 0.0f };
+    }
+}
+
+void KeyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (mods == GLFW_KEY_LEFT_SHIFT && key == GLFW_KEY_R) {
+        for (auto& component : components) {
+            if (component->position == gridMousePosition) {
+
+                component->RotateCounterClockwise();
+                break;
+            }
+        }
+    }
+
+    if (key == GLFW_KEY_R) {
+        for (auto& component : components) {
+            if (component->position == gridMousePosition) {
+
+                component->RotateClockwise();
+                break;
+            }
+        }
     }
 }
