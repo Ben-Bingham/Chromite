@@ -612,6 +612,13 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 
         glm::ivec2 newPos = glm::floor(mousePositionWorldspace / grid.gridLength);
 
+        while (true) {
+            auto newPosComponent = std::find_if(components.begin(), components.end(), [&newPos](Chromite::Component* component) { return component->position == newPos; });
+            if (newPosComponent == components.end()) break;
+
+            ++newPos.x;
+        }
+
         if (draggedComponent->north != nullptr) draggedComponent->north->south = nullptr;
         if (draggedComponent->east != nullptr) draggedComponent->east->west = nullptr;
         if (draggedComponent->south != nullptr) draggedComponent->south->north = nullptr;
